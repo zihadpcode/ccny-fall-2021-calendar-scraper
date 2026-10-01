@@ -2,9 +2,9 @@
 
 A guided Python notebook built incrementally with requests, Beautiful Soup, and pandas.
 
-## Current stage
-
-Completed calendar scraper setup and Python date introduction. The scraper will be added in later commits during the walkthrough.
+Completed: requests download attempt with a saved HTML fallback,
+Beautiful Soup table extraction, date-range expansion, and a validated
+pandas DataFrame with 58 rows, a Python date index, and dow/text columns.
 
 ## Setup
 
