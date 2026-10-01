@@ -4,7 +4,7 @@ A guided Python notebook built incrementally with requests, Beautiful Soup, and 
 
 ## Current stage
 
-Stage 0: project setup and Python date introduction. The scraper will be added in later commits during the walkthrough.
+Completed calendar scraper setup and Python date introduction. The scraper will be added in later commits during the walkthrough.
 
 ## Setup
 
