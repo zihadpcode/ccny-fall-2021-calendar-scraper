@@ -1,41 +1,55 @@
 # Revamp plan: CCNY Fall 2021 calendar scraper
 
-Date: 16 Nov 2026. Nothing here is started. Each slice waits for a go ahead.
+Date: 16 Nov 2026. Updated 23 Nov 2026 to match docs/design.md (Phase 2). Nothing here is started. Each slice waits for a go ahead.
 
 ## Phase map
 | Phase | State | Evidence or gap |
 |---|---|---|
-| 0 Frame | In progress | This folder. Awaiting approval |
-| 1 Requirements and risk | Not met | Terms and `robots.txt` unread. Snapshot provenance unknown |
-| 2 Design | Light | One decision: snapshot first or live first |
+| 0 Frame | Approved 19 Nov 2026 | docs/brief.md |
+| 1 Requirements and risk | Approved 22 Nov 2026 | docs/requirements.md, docs/risks.md, docs/acceptance-tests.md |
+| 2 Design | In progress, awaiting approval | docs/design.md, decisions 0003 to 0009 |
 | 3 Scaffold | Not met | No pinned environment, no test runner, no continuous integration |
-| 4 Build | Met for Fall 2021 | 58 rows reproduced today from the snapshot |
-| 5 Harden | Not met | Parser edge cases crash |
-| 6 Deploy and operate | Skipped at Tier A | To be recorded in docs/decisions when reached |
+| 4 Build | Met for Fall 2021 in memory | 58 rows reproduced from the snapshot. No command, no CSV |
+| 5 Harden | Not met | |
+| 6 Deploy and operate | Does not apply at Tier A | Decision 0009 |
 | 7 Validate | Partly | Asserts in cell 13 pass. No fresh clone run |
 | 8 Maintain | Not met | |
 
-## Proposed restructuring
+## Target layout (decisions 0003, 0005, 0007)
 ```
-README.md  LICENSE  PROJECT_BRIEF.md  requirements.txt (pinned)
-data/raw/fall_2021_calendar.html
-data/raw/SOURCES.md            (URL, saved date, method, SHA 256)
-data/out/fall_2021_calendar.csv
-src/calendar_scraper/parse.py  (extract_rows, expand_dates with year passed in)
-src/calendar_scraper/run.py    (snapshot in, CSV and a small run record out)
-tests/test_expand_dates.py  tests/test_snapshot.py
-fall_2021_calendar.ipynb       (imports from src, keeps the teaching notes)
+README.md  LICENSE  PROJECT_BRIEF.md
+requirements.txt  requirements_dev.txt      (exact pins)
+calendar_scraper/__init__.py  io.py  parse.py  live.py  __main__.py
+data/raw/fall_2021_calendar_table.html      (heading and table only)
+data/raw/fall_2021_calendar_table.html.sha256
+data/raw/SOURCES.md
+data/out/fall_2021_calendar.csv  data/out/fall_2021_calendar.run.json
+tests/conftest.py  tests/test_parse.py  tests/test_run.py  tests/test_notebook.py
+.github/workflows/tests.yml
+fall_2021_calendar.ipynb                    (imports the package, USE_LIVE = False)
 docs/
 ```
-* Remove the empty last cell and the duplicate pandas import.
-* Replace the stale "Planned commits" README section with real run steps.
-* The live fetch becomes an opt in flag, off by default, and only if the open terms question is answered yes.
-* A repository rename (the name carries the term) is your call and is not proposed now.
+This replaces the Phase 0 `src/` sketch (decision 0005). A repository rename stays your call and is not proposed.
 
-## First slices, in order
-1. Provenance: `data/raw/SOURCES.md` with your answer on how the snapshot was saved, plus its SHA 256. Test: the checksum in the file matches the file.
-2. Move `expand_dates` to `src/calendar_scraper/parse.py` unchanged, with tests that pin today's behavior for the three label shapes in cell 10. Test: pytest passes and the notebook still gives 58 rows. Needs your yes to add pytest.
-3. Make the snapshot the default input and write `data/out/fall_2021_calendar.csv` with a run record (input checksum, row counts 36 and 58). Test: two runs give the same output checksum with the network off.
-4. Harden the parser: cross month and cross year ranges, explicit year, year as a parameter, clear error messages naming the bad label. Test: the four failing labels in docs/current-state.md either parse or raise a named error.
-5. Pin `requirements.txt`, add LICENSE of your choice, add a continuous integration run of the tests.
-6. Optional, option B: add one more hand saved term and make the tests pass for it.
+Outside action means something that needs your yes and leaves the machine or changes shared state: a network install, a push, a remote change, a deletion of a tracked file.
+
+## Phase 3 slices: scaffold and walking skeleton
+| Slice | Work | Acceptance tests | Outside action |
+|---|---|---|---|
+| 3.1 | Exact pins from the working environment into `requirements.txt`; `requirements_dev.txt` adds pytest; fresh virtual environment from them | | Yes: network install of pytest and the pinned set |
+| 3.2 | Walking skeleton: `calendar_scraper` package from cells 6 to 13 with `assert` turned into named errors; checksum sidecar for the current snapshot; CSV and run record writer; `python -m calendar_scraper` | AT1, AT7, AT10 | No |
+| 3.3 | `tests/conftest.py` socket guard and `tests/test_run.py` (58 rows offline, two runs byte equal) | AT1, AT4, AT9, AT15 | No |
+| 3.4 | `.github/workflows/tests.yml`: Python 3.12, pinned install, pytest, rebuild and compare committed outputs | AT12 | Yes: push of the branch to run it |
+| 3.5 | Rollback proof: revert one commit locally and rerun the tests | | No |
+
+## Phase 4 slices, in order
+| Slice | Work | Acceptance tests | Outside action |
+|---|---|---|---|
+| 4.1 | Provenance first, as it tests the riskiest assumption: `data/raw/SOURCES.md` with your answer on how the snapshot was saved, three rows checked by eye in your browser; checksum mismatch stops the run | AT3, AT14 | No; needs your answer |
+| 4.2 | Quality checks complete: header row check, weekday on every day, exit codes and one line errors | AT1, AT5 partly | No |
+| 4.3 | Notebook imports the package, `USE_LIVE = False`, live path in `live.py` behind `--live` and failing closed; notebook test with nbclient; hand merge of the heading edit (R12) | AT2, AT8, AT9 | No. The live path is written and tested with a mock only; no request is sent |
+| 4.4 | Label grammar (decision 0006): cross month, cross year, explicit year, short month names, named errors; at least 8 label cases | AT5 | No |
+| 4.5 | Trim to heading and table (decision 0003); new sidecar; README with offline run steps, source and CUNY copyright note; LICENSE of your choice | AT13, AT16, AT3 again | Yes: deleting the tracked full page file, and the LICENSE choice |
+| 4.6 | Optional, option B: one more hand saved term | AT6 | You save the page in a browser |
+
+Phase 5 then covers the hardening passes; most parser work moved into 4.4 because the success outcome on 30 Nov 2026 needs the 8 label cases.

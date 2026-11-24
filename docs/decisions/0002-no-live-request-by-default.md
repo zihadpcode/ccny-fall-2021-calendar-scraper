@@ -1,6 +1,6 @@
 # 0002: No live request to the CCNY site by default
 
-Date: 20 Nov 2026. Status: proposed.
+Date: 20 Nov 2026. Status: accepted 22 Nov 2026, option B, with the Phase 1 approval.
 
 ## Context
 The notebook asks `https://www.ccny.cuny.edu/registrar/fall` on every run (line 140). The site answered a scripted client with a 403 bot challenge (16 Nov 2026). A web search on 19 Nov 2026 found no CCNY or CUNY text that grants automated access; the CUNY acceptable use policy bars access "without authorization"; `robots.txt` was not read. Details: docs/requirements.md section 4.
@@ -15,3 +15,6 @@ The notebook asks `https://www.ccny.cuny.edu/registrar/fall` on every run (line 
 
 ## Recommendation
 B. It keeps the teaching step without sending anything by default. Change to A if you say the assignment does not need the call.
+
+## Design detail (Phase 2, 23 Nov 2026)
+With the flag on, the run reads `robots.txt` first, sends a plain client name, compares the heading, and stops with a named error on any failure. It never falls back silently and never replaces the snapshot; outputs are always built from the snapshot. See docs/design.md D1 and section 3.
